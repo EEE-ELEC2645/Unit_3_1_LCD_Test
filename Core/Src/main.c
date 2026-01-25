@@ -1,0 +1,557 @@
+/* USER CODE BEGIN Header */
+/**
+  ******************************************************************************
+  * @file           : main.c
+  * @brief          : Main program body
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2025 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
+/* USER CODE END Header */
+/* Includes ------------------------------------------------------------------*/
+#include "main.h"
+#include "stm32l4xx_hal.h"
+#include "stm32l4xx_hal_gpio.h"
+#include "stm32l4xx_hal_uart.h"
+#include "usart.h"
+#include "gpio.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+#include "LCD.h"
+//#include "pong.h"
+#include <stdint.h>
+#include <stdio.h>
+#include "sprites.h"
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+
+// Retarget printf to UART (i.e. serial console)
+// by default printf does nothing, but we can override the _write function which is 
+// what printf ultimately calls to output characters
+// this way we can write to serial console using the familar printf function
+
+
+int _write(int file, char *ptr, int len) {
+    HAL_UART_Transmit(&huart2, (uint8_t*)ptr, len, HAL_MAX_DELAY);
+    return len;
+}
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+
+/* USER CODE BEGIN PV */
+
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);
+/* USER CODE BEGIN PFP */
+
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+
+/* USER CODE END 0 */
+
+/**
+  * @brief  The application entry point.
+  * @retval int
+  */
+int main(void)
+{
+
+  /* USER CODE BEGIN 1 */
+
+  /* USER CODE END 1 */
+
+  /* MCU Configuration--------------------------------------------------------*/
+
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  // You will get a breakpoint here by default!
+  HAL_Init();
+
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
+
+  /* Configure the system clock */
+  SystemClock_Config();
+
+  /* USER CODE BEGIN SysInit */
+
+  /* USER CODE END SysInit */
+
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_USART2_UART_Init();
+  /* USER CODE BEGIN 2 */
+
+  // LCD configuration structure.
+  // Here we define which SPI peripheral to use, and which GPIO pins are connected to which LCD signals.
+  // You shouldnt need to change this unless you change the connections
+  ST7789V2_cfg_t cfg0 = {
+    .setup_done = 0,
+    .spi = SPI2,
+    .RST = {.port = GPIOB, .pin = GPIO_PIN_2},
+    .BL = {.port = GPIOB, .pin = GPIO_PIN_1},
+    .DC = {.port = GPIOB, .pin = GPIO_PIN_11},
+    .CS = {.port = GPIOB, .pin = GPIO_PIN_12},
+    .MOSI = {.port = GPIOB, .pin = GPIO_PIN_15},
+    .SCLK = {.port = GPIOB, .pin = GPIO_PIN_13},
+    .dma = {.instance = DMA1, .channel = DMA1_Channel5}
+  };
+
+  // Initialize LCD - note that this also powers on the display and backlight
+  // and also if the display was previously powered on, it will probably show the last image
+  // that was displayed before reset
+  LCD_init(&cfg0);
+  /* USER CODE END 2 */
+
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+  // uint8_t i = 0;
+
+
+  // This is the low level way to send data over UART to the serial console
+char msg[] = "HELLO WORLD\r\n";
+
+HAL_UART_Transmit(&huart2, (uint8_t *)msg, sizeof(msg) - 1, HAL_MAX_DELAY);
+
+// Using printf to send data over UART to the serial console instead. See the _write function above
+// much easier!
+printf("Starting LCD demo...\n");
+
+
+// ========= Welcome Message ===========
+printf("Welcome to ELEC2645...\n");
+
+// The ST7789V Screen has 240x240 pixels, each with 16 bit colour 
+// stored in RGB 565 https://rgbcolorpicker.com/565
+// Sadly due to memory limits of the Nucleo board 
+// we can only have 4 bits per pixel i.e 0-15
+// So here the colour values 0-15 represent the index to the colour palette
+// which is definied in LCD.h 0 = black, 1 = white, 2 = red, 3 = green etc.
+// We will use the default palette defined in LCD.h for now but you can explore
+// creating your own
+
+// make screen black (0 in palette set in LCD.h)
+LCD_Fill_Buffer(0);
+
+// in order to see the changes we have made to the screen buffer, we need to
+// refresh the display to copy the data in the buffer to the screen
+LCD_Refresh(&cfg0);
+
+LCD_printString("Welcome",  20, 10, 1, 5);
+LCD_Refresh(&cfg0);
+HAL_Delay(200); // delay by 200 ms to allow time to see the text 
+LCD_printString("To",  90, 70, 1, 5);
+LCD_Refresh(&cfg0);
+HAL_Delay(200);
+LCD_printString("ELEC2645",  00, 140, 1, 5);
+LCD_Refresh(&cfg0);
+
+// Flash the on-board LED a few times so we know it's running
+for (int iFlash = 0; iFlash < 6; iFlash++) {
+  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+  HAL_Delay(250);
+}
+
+
+// ========= Shapes ===========
+printf("Shape Demo...\n");
+LCD_Fill_Buffer(2);
+LCD_printString("Shapes&Lines",  10, 10, 1, 3);
+
+LCD_Refresh(&cfg0);
+
+// Draw a solid rectangle, specify top corner, dimensions and colour
+LCD_Draw_Rect(60, 50, 50, 30, 5, 1);
+HAL_Delay(200);
+LCD_Refresh(&cfg0);
+
+// Draw a rectangle outline only 
+
+LCD_Draw_Rect(150, 100, 30, 50, 4, 0);
+HAL_Delay(100);
+LCD_Refresh(&cfg0);
+
+// Draw a circle, specifying centre, radius and colour
+LCD_Draw_Circle(100, 100, 10, 6, 1);
+HAL_Delay(100);
+LCD_Refresh(&cfg0);
+
+LCD_Draw_Circle(140, 180, 30, 8, 1);
+HAL_Delay(100);
+LCD_Refresh(&cfg0);
+
+// Draw a line between two points
+LCD_Draw_Line(10, 60, 200, 220, 7);
+HAL_Delay(100);
+
+LCD_Draw_Line(220, 200, 230, 50, 14);
+HAL_Delay(100);
+
+LCD_Refresh(&cfg0);
+
+
+HAL_Delay(3000);
+
+
+// =========== Text ===========
+printf("Text to the screen...\n");
+
+// clear whole buffer again
+LCD_Fill_Buffer(3);
+
+// The font is defined in LCD.h, each character is 5x7 pixels (5 wide, 7 high)
+// which is quite small! So you can scale the font by a scale factor font_size
+// so for a font_size =3 each character is 15x21
+
+LCD_printString("Text",  10, 10, 1, 5);
+HAL_Delay(100);
+LCD_Refresh(&cfg0);
+LCD_printString("Small text",  10, 70, 1, 1);
+HAL_Delay(100);
+LCD_Refresh(&cfg0);
+LCD_printString("Medium text",  10, 100, 1, 3);
+HAL_Delay(100);
+LCD_Refresh(&cfg0);
+LCD_printString("BIG TXT",  10, 130, 1, 5);
+HAL_Delay(100);
+LCD_Refresh(&cfg0);
+
+// Just a single character - remember this needs ''s not ""s
+LCD_printChar('A',  200, 200, 1);
+LCD_Refresh(&cfg0);
+
+
+HAL_Delay(3000);
+
+// ============== Sprites ===============
+
+printf("Sprites...\n");
+
+LCD_Fill_Buffer(1);
+LCD_printString("Sprites",  10, 10, 3, 5);
+
+LCD_Refresh(&cfg0);
+HAL_Delay(200);
+
+// Sprites are definied as 2D arrays, where each element represents a pixel colour index
+// A pixel value of 255 is transparent, and numbers 0-15 directly refer to the current colour palette
+// (0=LCD_COLOUR_0/black, 1=LCD_COLOUR_1/white, etc.)
+
+// This sprite has either 255 (transparent) or 0 (LCD_COLOUR_0/black)
+const uint8_t Face[10][10] = {
+{255, 255, 0, 0, 0, 0, 0, 0, 255, 255 },
+{ 255, 0, 0, 255, 255, 255, 255, 0, 0, 255 },
+{ 0, 0, 255, 255, 255, 255, 255, 255, 0, 0 },
+{ 0, 255, 255, 0, 255, 255, 0, 255, 255, 0 },
+{ 0, 255, 255, 255, 255, 255, 255, 255, 255, 0 },
+{ 0, 255, 0, 255, 255, 255, 255, 255, 255, 0 },
+{ 0, 255, 255, 0, 0, 0, 0, 255, 255, 0 },
+{ 0, 0, 255, 255, 255, 255, 255, 255, 0, 0 },
+{ 255, 0, 0, 255, 255, 255, 255, 0, 0, 255 },
+{ 255, 255, 0, 0, 0, 0, 0, 0, 255, 255 } ,
+}; 
+
+// we can draw the sprite specfying the top corner, dimensions, and pointer 
+// to the sprite data - note that we actual pass a pointer to the first value
+// by casting the sprite to a uint8_t* 
+LCD_Draw_Sprite(20, 50, 10, 10, (uint8_t*)Face);
+LCD_Draw_Sprite(20, 60, 10, 10, (uint8_t*)Face);
+
+LCD_Refresh(&cfg0);
+HAL_Delay(200);
+
+// We can also override the colours in the sprite and set any non-zero pixels to a new value
+// This way we can have the same sprite be different colours, and save memory
+LCD_Draw_Sprite_Colour(20, 70, 10, 10, (uint8_t*)Face, 3);
+LCD_Draw_Sprite_Colour(20, 80, 10, 10, (uint8_t*)Face, 5);
+LCD_Draw_Sprite_Colour(20, 90, 10, 10, (uint8_t*)Face, 6);
+
+
+LCD_Refresh(&cfg0);
+HAL_Delay(200);
+
+
+// We can also scale the sprite when we draw it
+// here we draw the same sprite 3 times, scaled by 1, 2 and 3
+LCD_Draw_Sprite_Scaled(50, 90, 10, 10, (uint8_t*)Face, 1);
+LCD_Draw_Sprite_Scaled(60, 90, 10, 10, (uint8_t*)Face, 2);
+LCD_Draw_Sprite_Scaled(90, 90, 10, 10, ( uint8_t*)Face, 3); 
+LCD_Refresh(&cfg0);
+
+HAL_Delay(200);
+
+
+// We can also combine colour override and scaling
+LCD_Draw_Sprite_Colour_Scaled(130, 90, 10, 10, (uint8_t*)Face, 4, 3);
+LCD_Draw_Sprite_Colour_Scaled(170, 90, 10, 10, (uint8_t*)Face, 7, 2);
+LCD_Refresh(&cfg0);
+HAL_Delay(200);
+
+
+// The sprites can be larger and have more colours 
+// These sprites are stored in Sprites.h
+
+LCD_Draw_Sprite(50, 130, 40, 40, (uint8_t*)SPRITETREE);
+LCD_Draw_Sprite(90, 130, 42, 27, (uint8_t*)SPRITEROBOT);
+LCD_Draw_Sprite_Scaled(120, 130, 40, 40, (uint8_t*)SPRITETREE,2);
+
+LCD_Refresh(&cfg0);
+HAL_Delay(200);
+
+// We can create animations by drawing different sprites in sequence
+// Here we loop through the Stardew Valley cat frames to create a simple animation
+// Each frame is 20x16 pixels and stored in Sprites.h as a 2D array.
+// We have created an array of pointers to each frame for convenience
+
+int STARDEWCAT_SCALE = 2; // change to 2 for double size
+
+for (int iLoop = 0; iLoop < 5; iLoop++) {
+  for (int f = 0; f < STARDEWCAT_FRAME_COUNT; ++f) {
+    LCD_Draw_Rect(10, 180, 20*STARDEWCAT_SCALE, 16*STARDEWCAT_SCALE, 1, 1); // clear previous sprite area
+    LCD_Draw_Sprite_Scaled(10, 180, 16, 20, (uint8_t*)STARDEWCAT_FRAMES[f], STARDEWCAT_SCALE); // write new sprite frame using the array of pointers
+    LCD_Refresh(&cfg0);
+    HAL_Delay(200);
+  }
+}
+
+
+
+
+// ====== MISC ======
+
+printf("Miscellaneous...\n");
+
+// Quickly loop through all the colours in the colour palette, this is the slowest possible refresh rate
+// as every single pixel has to be changed and sent to the display
+
+LCD_Palette curPalette = PALETTE_DEFAULT;
+
+LCD_Set_Palette(curPalette);
+
+char buf[20];
+for (int iClr = 0; iClr <= 15; iClr++) {
+LCD_Fill_Buffer(iClr);
+
+snprintf(buf, sizeof(buf), "Colour:%d", iClr);
+LCD_printString(buf, 10, 10, 1, 4);
+LCD_printString("Default", 10, 50, 1, 4);
+
+LCD_Refresh(&cfg0);
+HAL_Delay(200);
+}
+
+// Switch to Greyscale palette
+curPalette = PALETTE_GREYSCALE;
+
+LCD_Set_Palette(curPalette);
+
+printf("Switching Palettes...\n");
+for (int iClr = 0; iClr <= 15; iClr++) {
+LCD_Fill_Buffer(iClr);
+
+snprintf(buf, sizeof(buf), "Colour:%d", iClr);
+LCD_printString(buf, 10, 10, 1, 4);
+LCD_printString("GreyScale", 10, 50, 1, 4);
+
+
+LCD_Refresh(&cfg0);
+HAL_Delay(200);
+}
+
+// Switch to Vintage palette
+curPalette = PALETTE_VINTAGE;
+
+LCD_Set_Palette(curPalette);
+
+printf("Switching Palettes...\n");
+for (int iClr = 0; iClr <= 15; iClr++) {
+LCD_Fill_Buffer(iClr);
+
+snprintf(buf, sizeof(buf), "Colour:%d", iClr);
+LCD_printString(buf, 10, 10, 1, 4);
+LCD_printString("Vintage", 10, 50, 1, 4);
+LCD_Refresh(&cfg0);
+HAL_Delay(200);
+}
+
+
+curPalette = PALETTE_CUSTOM;
+LCD_Set_Palette(curPalette);
+
+printf("Switching Palettes...\n");
+for (int iClr = 0; iClr <= 15; iClr++) {
+LCD_Fill_Buffer(iClr);
+
+snprintf(buf, sizeof(buf), "Colour:%d", iClr);
+LCD_printString(buf, 10, 10, 1, 4);
+LCD_printString("Custom", 10, 50, 1, 4);
+
+LCD_Refresh(&cfg0);
+HAL_Delay(200);
+}
+
+
+curPalette = PALETTE_DEFAULT;
+LCD_Set_Palette(curPalette);
+
+
+// Inverse Mode 
+LCD_Fill_Buffer(14);
+LCD_printString("HAPPY",  10, 10, 3, 6);
+LCD_printString("CODING",  10, 60, 3, 6);
+LCD_printString(":D:D:D",  10, 120, 3, 6);
+LCD_Refresh(&cfg0);
+
+
+// We can quickly invert all RGB values on the screen
+// each pixel's colour gets bit flipped *in hardware*
+// so it happens quickly and without changing frame buffer
+// or needing to call LCD_Refresh
+
+for (int iLoop = 0; iLoop < 2; iLoop++) {
+  HAL_Delay(1000);
+  LCD_inverseMode(&cfg0);
+  HAL_Delay(1000);
+  LCD_normalMode(&cfg0);  
+}
+
+LCD_Fill_Buffer(0);
+LCD_printString("BYE!", 30, 100, 1, 6); 
+LCD_Refresh(&cfg0);
+HAL_Delay(1000);
+
+// Turn off the Display call LCD_turnOn to turn it back on
+LCD_turnOff(&cfg0);
+
+HAL_Delay(1000);
+LCD_turnOn(&cfg0);
+
+HAL_Delay(1000);
+LCD_turnOff(&cfg0);
+
+printf("All done! LED will blink now.\n");
+
+
+// Loop forever blinking the on-board LED with no screen on
+
+
+  while (1)
+  {
+  /* USER CODE END WHILE */
+  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+  HAL_Delay(1000);
+
+  /* USER CODE BEGIN 3 */
+  }
+  /* USER CODE END 3 */
+}
+
+/**
+  * @brief System Clock Configuration
+  * @retval None
+  */
+void SystemClock_Config(void)
+{
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+
+  /** Configure the main internal regulator output voltage
+  */
+  if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
+  */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLM = 1;
+  RCC_OscInitStruct.PLL.PLLN = 10;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV7;
+  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
+  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Initializes the CPU, AHB and APB buses clocks
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+/* USER CODE BEGIN 4 */
+
+/* USER CODE END 4 */
+
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
+void Error_Handler(void)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+  __disable_irq();
+  while (1)
+  {
+  }
+  /* USER CODE END Error_Handler_Debug */
+}
+#ifdef USE_FULL_ASSERT
+/**
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
+void assert_failed(uint8_t *file, uint32_t line)
+{
+  /* USER CODE BEGIN 6 */
+  /* User can add his own implementation to report the file name and line number,
+     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+  /* USER CODE END 6 */
+}
+#endif /* USE_FULL_ASSERT */
