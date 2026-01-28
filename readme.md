@@ -1,28 +1,19 @@
-# ELEC2645 Unit 3 - Magic 8 Ball 
+# ELEC2645 Unit 3 - LCD Test 
 
-This lab shows the basics of using the LCD screen and the onboard blue button and LED on the Nucleo board. We also write to the serial port 
+This lab demonstrates the capabilities of the ST7789V2 LCD display connected to the Nucleo-L476RG board. It showcases various graphics operations including text rendering, geometric shapes, sprites, and colour palettes. The program also outputs information to the serial console at 115200 baud.
 
-The most important file is `main.c` which is found in `Core/Src/main.c` 
+The most important file is `main.c` which is found in [Core/Src/main.c](Core/Src/main.c). 
 
 ## The assignment
 
-First get the code running and make sure you understand how it is all working. 
-
-Something is wrong with this Magic 8 Ball - it sounds far too sycophantic like ChatGPT (4o in particular). It just agrees with everything you say and praises you! There is also a black screen after the first button press.
-
-For this lab can you:
-1. Add more messages to the Magic 8 ball
-2. Fix the blank screen in between button presses
-3. (Bonus) Add some more fancy animations!
-
-When you are finished, add your finished code (just main.c) to the Code submission area on Minerva. 
+Get the code running and understand how each LCD function works. Observe the demonstrations on the screen and understand what each section is displaying. 
 
 
 ## Setup
 Please follow the prelab setup on the Minerva page, but a brief reminder here:
 - Install [ST Link drivers](https://www.st.com/en/development-tools/stsw-link009.html) (if using your own PC)
 - Install the [STM32CubeIDE for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=stmicroelectronics.stm32-vscode-extension) a bundle of 15 extensions
-- Open the Unit3_Magic8Ball folder  and in the bottom corner when asked "*Would you like to configure discovered CMake project as STM32Cube project*" say "**Yes**" you want to open this folder as an STM32 Project. Let the extension finish the setup
+- Open the Unit_3_1_LCD_Test folder and in the bottom corner when asked "*Would you like to configure discovered CMake project as STM32Cube project*" say "**Yes**" you want to open this folder as an STM32 Project. Let the extension finish the setup
 - If prompted choose the "Debug" configuration
 - You can click "Build" at the bottom of the screen to check it compiles
 - Check the board is connected under "STM32CUBE Devices and Boards" in the "Run and Debug" page. You can tell it to Blink, and if you have not yet done so, upgrade the firmware. 
@@ -30,26 +21,78 @@ Please follow the prelab setup on the Minerva page, but a brief reminder here:
 - The code will now run, and you can continue past the breakpoints by hitting F5 or clicking the green arrow
 - (optional) add the [Serial Monitor](https://marketplace.visualstudio.com/items?itemName=ms-vscode.vscode-serial-monitor) extension as it is easier to use than the one bundled with the STM32CubeIDE
 
-## The LCD 
+## LCD Hardware Setup
 
-Make sure you have followed the instructions on the Minerva page to hook up the LCD screen to the Nucleo through the breadboard. This is the same as the LCD Demo code
+Make sure you have followed the instructions on the Minerva page to hook up the LCD screen to the Nucleo through the breadboard.
 
+| LCD Pin | Nucleo Pin |
+|---------|-----------|
+| 3V-5V   | VDD       |
+| GND     | GND       |
+| MOSI    | PB15      |
+| SCK     | PB13      |
+| CS      | PB12      |
+| DC      | PB11      |
+| BL      | PB1       |
+| RST     | PB2       |
 
-| LCD | MCU |
-|-----|-----|
-| 3V-5V | VDD |
-| GND | GND |
-| MOSI | B15 |
-| SCK | B13 |
-| CS  | B12 |
-| DC  | B11 |
-| BL  | B1  |
+## What the Program Displays
 
-The functions we have used here are:
+When you run the program, you will see a series of demonstrations on the LCD screen. The serial console will also print messages showing the progress through each section. Here's what to expect:
 
-- `LCD_printString()`
-- `LCD_Draw_Circle()`
+### 1. Welcome Message
+The first screen sets a black background and then displays a welcome message with text "Welcome", "To", and "ELEC2645" appearing progressively with a 200ms delay between each line.
 
+### 2. Shapes and Lines
+This section demonstrates drawing geometric shapes:
+- **Solid Rectangle**: A filled rectangle (50×30 pixels) in colour index 5
+- **Rectangle Outline**: An unfilled rectangle (30×50 pixels) in colour index 4 showing just the border
+- **Circles**: Two circles are drawn with different radii (10 and 30 pixels) in different colours (6 and 8)
+- **Lines**: Two diagonal lines demonstrating the line drawing function in colours 7 and 14
+The background is red for this section.
+
+### 3. Text Rendering
+This section shows text in various sizes using the built-in 5×7 pixel font:
+- **Small text**: Font scale of 1 (5×7 pixels per character)
+- **Medium text**: Font scale of 3 (15×21 pixels per character)
+- **Large text**: Font scale of 5 (25×35 pixels per character)
+- **Single character**: Demonstrates rendering a single character ('A')
+The background for this section is green.
+
+### 4. Sprites
+This is the most visually interesting section demonstrating sprite rendering:
+- **Simple Face Sprite**: A 10×10 pixel black smiley face drawn multiple times
+- **Colour Override**: The same sprite rendered in different colours (3, 5, 6) without changing the sprite data
+- **Scaled Sprites**: The face sprite drawn at scale factors of 1, 2, and 3
+- **Larger Sprites**: Pre-defined sprites from `sprites.h` including a tree (40×40) and robot (42×27)
+- **Animation**: A Stardew Valley cat animation loops 5 times with multiple frames, demonstrating how to create simple animations
+The background is white for this section.
+
+### 5. Colour Palettes
+This section demonstrates 4 different colour palettes by cycling through all 16 colours in each palette:
+- **Default Palette**: Standard colour mapping
+- **Greyscale Palette**: Black, white, and grey tones
+- **Vintage Palette**: Warm, muted colours based on vintage game consoles
+- **Custom Palette**: User-defined colours
+Each colour is displayed for 200ms with the colour index and palette name shown on screen.
+
+## LCD Functions Used
+
+The following key LCD functions are demonstrated in this program:
+
+- `LCD_init()` - Initialize the LCD display
+- `LCD_Fill_Buffer(colour)` - Fill the entire screen with a single colour
+- `LCD_Refresh()` - Copy the buffer contents to the physical display
+- `LCD_printString(text, x, y, colour, size)` - Draw text at specified position with size scaling
+- `LCD_printChar(char, x, y, colour)` - Draw a single character
+- `LCD_Draw_Rect(x, y, width, height, colour, filled)` - Draw a rectangle (filled or outline)
+- `LCD_Draw_Circle(x, y, radius, colour, filled)` - Draw a circle
+- `LCD_Draw_Line(x1, y1, x2, y2, colour)` - Draw a line between two points
+- `LCD_Draw_Sprite(x, y, width, height, sprite_data)` - Draw a sprite with transparent pixels
+- `LCD_Draw_Sprite_Colour(x, y, width, height, sprite_data, colour)` - Draw sprite with colour override
+- `LCD_Draw_Sprite_Scaled(x, y, width, height, sprite_data, scale)` - Draw sprite with scaling
+- `LCD_Draw_Sprite_Colour_Scaled()` - Draw sprite with both colour and scale
+- `LCD_Set_Palette(palette)` - Switch between different colour palettes
 
 ## GPIO - General Purpose Input Output
 
