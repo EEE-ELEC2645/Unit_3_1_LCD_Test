@@ -25,16 +25,16 @@ Please follow the prelab setup on the Minerva page, but a brief reminder here:
 
 Make sure you have followed the instructions on the Minerva page to hook up the LCD screen to the Nucleo through the breadboard.
 
-| LCD Pin | Nucleo Pin |
-|---------|-----------|
-| 3V-5V   | VDD       |
-| GND     | GND       |
-| MOSI    | PB15      |
-| SCK     | PB13      |
-| CS      | PB12      |
-| DC      | PB11      |
-| BL      | PB1       |
-| RST     | PB2       |
+| LCD Pin | Signal  | Nucleo Pin | Purpose |
+|---------|---------|-----------|---------|
+| VDD     | Power (3.3V-5V) | VDD | Display power supply |
+| GND     | Ground  | GND | Ground reference |
+| MOSI    | Serial Data | PB15 | SPI Master Output Slave Input |
+| SCK     | Clock   | PB13 | SPI Clock signal |
+| CS      | Chip Select | PB12 | SPI Chip Select |
+| DC      | Data/Command | PB11 | Command vs Data mode |
+| BL      | Backlight | PB1 | Backlight control (PWM) |
+
 
 ## What the Program Displays
 
